@@ -3,311 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockMind Pro - Stock Analysis & Prediction</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>StockMind AI - Advanced Stock Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <header>
         <div class="top-header">
-            <div class="logo">StockMind Pro</div>
-            <div class="tagline">AI-Powered Stock Analysis & Prediction</div>
+            <div class="logo">StockMind AI</div>
+            <div class="tagline">AI-powered Stock Analysis & Prediction</div>
         </div>
+        <nav class="navigation">
+            <a href="{{ url_for('home') }}">Home</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('analyze_view') }}">Analyze</a>
+            <a href="{{ url_for('portfolio') }}">Portfolio</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}">Register</a>
+            {% endif %}
+        </nav>
     </header>
 
-    <div class="container">
-        <div class="card">
-            <h2>Analyze & Predict Stock Performance</h2>
-            <form id="stockForm">
-                <div class="input-group">
-                    <label for="companyName">Company Name (e.g. Apple, Tesla):</label>
-                    <input type="text" id="companyName" name="companyName" placeholder="Enter company name">
-                </div>
-                
-                <div class="input-group">
-                    <label for="ticker">Stock Ticker (e.g. AAPL, TSLA):</label>
-                    <input type="text" id="ticker" name="ticker" placeholder="Enter ticker symbol">
-                </div>
-                
-                <p style="margin-bottom: 15px; color: #aaa;">* Enter either company name or ticker symbol</p>
-
-                <div class="input-group">
-                    <label for="source">Data Source:</label>
-                    <select id="source" name="source">
-                        <option value="yfinance">Yahoo Finance</option>
-                        <option value="nasdaq" disabled>NASDAQ (Coming Soon)</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-block">Analyze & Predict</button>
-            </form>
-            <div id="loader" class="loader" style="display: none;"></div>
+    <div class="hero">
+        <div class="container">
+            <h1>Advanced Stock Analysis with AI</h1>
+            <p class="hero-description">
+                StockMind AI combines machine learning price predictions with AI-powered competitor analysis to give you the most comprehensive stock insights.
+            </p>
+            <div class="hero-cta">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('analyze_view') }}" class="btn btn-primary">Analyze a Stock</a>
+                {% else %}
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+                {% endif %}
+            </div>
         </div>
+    </div>
 
-        <div id="results" class="results-card">
-            <div class="results-row">
-                <div class="results-col">
-                    <h3>Company Information</h3>
-                    <div id="companyInfo" class="company-info"></div>
-                </div>
-                <div class="results-col">
-                    <h3>Ticker & Current Price</h3>
-                    <div class="data-box">
-                        <div id="tickerDisplay"></div>
-                        <div id="currentPrice"></div>
+    <div class="features-section">
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/ai-icon.svg') }}" alt="AI Icon">
                     </div>
+                    <h3>AI-Powered Analysis</h3>
+                    <p>Uses Google's Gemini AI to identify competitors across multiple sectors.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/prediction-icon.svg') }}" alt="Prediction Icon">
+                    </div>
+                    <h3>Stock Price Prediction</h3>
+                    <p>ML model predicts the next day's closing price based on historical data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/competitor-icon.svg') }}" alt="Competitor Icon">
+                    </div>
+                    <h3>Competitor Tracking</h3>
+                    <p>Identifies and tracks peer competitors across multiple sectors.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/portfolio-icon.svg') }}" alt="Portfolio Icon">
+                    </div>
+                    <h3>Portfolio Management</h3>
+                    <p>Create and manage watchlists to track your favorite stocks.</p>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="results-row">
-                <div class="results-col">
-                    <h3>Next Day Price Prediction</h3>
-                    <div class="data-box">
-                        <p>Our Linear Regression model predicts the next day's closing price will be:</p>
-                        <div id="predictedPrice" class="prediction-value"></div>
-                        <p class="prediction-note">Based on machine learning analysis of historical data</p>
-                    </div>
+    <div class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Enter a Company</h3>
+                    <p>Type in a company name or ticker symbol to analyze.</p>
                 </div>
-                <div class="results-col">
-                    <h3>Historical Price Trend</h3>
-                    <div class="chart-container">
-                        <canvas id="priceChart"></canvas>
-                    </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>AI Analysis</h3>
+                    <p>Our AI identifies sectors and competitors while our ML model predicts prices.</p>
                 </div>
-            </div>
-
-            <div id="competitorsSection" class="competitors-section">
-                <h3>Top Industry Competitors</h3>
-                <div id="competitorsList"></div>
-                <div class="chart-container">
-                    <canvas id="competitorsChart"></canvas>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Comprehensive Results</h3>
+                    <p>View detailed analysis including competitors, predicted prices, and market trends.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Track Your Stocks</h3>
+                    <p>Save stocks to watchlists and set price alerts for important movements.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2025 StockMind Pro. All rights reserved.</p>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <div class="logo">StockMind AI</div>
+                    <p>Advanced stock analysis powered by AI and ML</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="{{ url_for('home') }}">Home</a></li>
+                        {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li><a href="{{ url_for('analyze_view') }}">Analyze</a></li>
+                        <li><a href="{{ url_for('portfolio') }}">Portfolio</a></li>
+                        {% else %}
+                        <li><a href="{{ url_for('login') }}">Login</a></li>
+                        <li><a href="{{ url_for('register') }}">Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact</h4>
+                    <p>Email: info@stockmind-ai.com</p>
+                    <p>GitHub: <a href="https://github.com/stockmind-ai" target="_blank">github.com/stockmind-ai</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 StockMind AI. All rights reserved.</p>
+            </div>
+        </div>
     </footer>
 
     <script>
-        const stockForm = document.getElementById('stockForm');
-        const loader = document.getElementById('loader');
-        const results = document.getElementById('results');
-
-        stockForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Get form values
-            const companyName = document.getElementById('companyName').value.trim();
-            const ticker = document.getElementById('ticker').value.trim();
-            const source = document.getElementById('source').value;
-            
-            if (!companyName && !ticker) {
-                alert('Please enter either a company name or ticker symbol');
-                return;
-            }
-            
-            // Show loader, hide results
-            loader.style.display = 'block';
-            results.style.display = 'none';
-            
-            try {
-                // Make API call to your backend
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        company_name: companyName,
-                        ticker: ticker,
-                        source: source
-                    })
+        // Flash message handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            if (flashMessages.length > 0) {
+                flashMessages.forEach(message => {
+                    setTimeout(() => {
+                        message.classList.add('fade-out');
+                        setTimeout(() => {
+                            message.remove();
+                        }, 500);
+                    }, 5000);
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update UI with results
-                    displayResults(data);
-                } else {
-                    alert(data.error || 'Error processing your request');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            } finally {
-                // Hide loader
-                loader.style.display = 'none';
             }
         });
-
-        function displayResults(data) {
-            // Company info
-            document.getElementById('companyInfo').innerHTML = `
-                <p>${data.description || 'No company description available'}</p>
-            `;
-            
-            // Ticker and current price
-            document.getElementById('tickerDisplay').innerHTML = `
-                <p><strong>Ticker:</strong> ${data.ticker}</p>
-            `;
-            document.getElementById('currentPrice').innerHTML = `
-                <p><strong>Current Price:</strong> $${data.current_price}</p>
-            `;
-            
-            // Predicted price
-            document.getElementById('predictedPrice').textContent = `$${data.predicted_price}`;
-            
-            // Price chart
-            renderPriceChart(data.time_labels, data.stock_prices);
-            
-            // Competitors section
-            if (data.top_competitors && data.top_competitors.length > 0) {
-                const competitorsList = document.getElementById('competitorsList');
-                competitorsList.innerHTML = '';
-                
-                data.top_competitors.forEach(comp => {
-                    const div = document.createElement('div');
-                    div.className = 'competitor-item';
-                    div.innerHTML = `
-                        <span class="competitor-name">${comp.name} (${comp.ticker})</span>
-                        <span class="competitor-price">$${comp.stock_price}</span>
-                    `;
-                    competitorsList.appendChild(div);
-                });
-                
-                renderCompetitorsChart(data.top_competitors);
-                document.getElementById('competitorsSection').style.display = 'block';
-            } else {
-                document.getElementById('competitorsSection').style.display = 'none';
-            }
-            
-            // Show results
-            results.style.display = 'block';
-        }
-
-        function renderPriceChart(labels, prices) {
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            
-            // Create gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(93, 178, 255, 0.5)');
-            gradient.addColorStop(1, 'rgba(93, 178, 255, 0)');
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Stock Price',
-                        data: prices,
-                        borderColor: '#5ab2ff',
-                        backgroundColor: gradient,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#c9d1d9'
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#c9d1d9'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#c9d1d9'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderCompetitorsChart(competitors) {
-            // Only proceed if we have competitors with stock prices
-            if (!competitors || competitors.length === 0 || !competitors.some(comp => comp.stock_prices && comp.stock_prices.length > 0)) {
-                return;
-            }
-            
-            const ctx = document.getElementById('competitorsChart').getContext('2d');
-            
-            // Get competitors that have stock_prices
-            const validCompetitors = competitors.filter(comp => comp.stock_prices && comp.stock_prices.length > 0);
-            
-            if (validCompetitors.length === 0) {
-                return;
-            }
-            
-            // Extract data
-            const datasets = validCompetitors.map((comp, index) => {
-                // Create different colors for each competitor
-                const colors = ['#5ab2ff', '#4caf50', '#ff9800'];
-                
-                return {
-                    label: comp.name,
-                    data: comp.stock_prices,
-                    borderColor: colors[index % colors.length],
-                    tension: 0.3
-                };
-            });
-            
-            // Use the first competitor's time labels
-            const labels = validCompetitors[0].time_labels;
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#c9d1d9'
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#c9d1d9'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#c9d1d9'
-                            }
-                        }
-                    }
-                }
-            });
-        }
     </script>
 </body>
 </html>

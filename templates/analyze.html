@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis - StockMind AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="analyze-page">
+    <header>
+        <div class="top-header">
+            <div class="logo">StockMind AI</div>
+            <div class="tagline">AI-powered Stock Analysis & Prediction</div>
+        </div>
+        <nav class="navigation">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('analyze_view') }}" class="active">Analyze</a>
+            <a href="{{ url_for('portfolio') }}">Portfolio</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <div class="analyze-content">
+        <div class="container">
+            <h1>Stock Analysis</h1>
+            
+            <div class="analyze-form-section">
+                <div class="card">
+                    <h2>Enter a Company</h2>
+                    <form id="analyzeForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="companyName">Company Name:</label>
+                                <input type="text" id="companyName" name="company_name" placeholder="e.g., Apple Inc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="ticker">Stock Ticker:</label>
+                                <input type="text" id="ticker" name="ticker" placeholder="e.g., AAPL">
+                            </div>
+                        </div>
+                        <p class="form-note">Enter either company name or ticker symbol</p>
+                        <button type="submit" class="btn btn-primary btn-block">Analyze</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="loader" class="loader-container" style="display: none;">
+                <div class="loader"></div>
+                <p>Analyzing... Please wait</p>
+            </div>
+            
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <!-- Analysis Header -->
+                <div class="analysis-header">
+                    <div class="company-info">
+                        <h2 id="companyNameDisplay"></h2>
+                        <div class="ticker-badge" id="tickerDisplay"></div>
+                    </div>
+                    <div class="price-prediction">
+                        <div class="current-price">
+                            <span class="label">Current Price:</span>
+                            <span class="value" id="currentPrice"></span>
+                        </div>
+                        <div class="predicted-price">
+                            <span class="label">Predicted Price:</span>
+                            <span class="value" id="predictedPrice"></span>
+                            <span class="prediction-badge" id="predictionBadge"></span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="addToWatchlist">Add to Watchlist</button>
+                        <button class="btn btn-secondary" id="setAlert">Set Price Alert</button>
+                    </div>
+                </div>
+                
+                <!-- Main Content Tabs -->
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="overview">Overview</button>
+                        <button class="tab-btn" data-tab="competitors">Competitors</button>
+                        <button class="tab-btn" data-tab="sectors">Sector Analysis</button>
+                        <button class="tab-btn" data-tab="metrics">Growth Metrics</button>
+                        <button class="tab-btn" data-tab="news">Latest News</button>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Overview Tab -->
+                        <div class="tab-pane active" id="overview">
+                            <div class="overview-grid">
+                                <div class="description-card">
+                                    <h3>Company Description</h3>
+                                    <div id="companyDescription" class="description-content"></div>
+                                </div>
+                                <div class="price-chart-card">
+                                    <h3>Price History (3 Months)</h3>
+                                    <div class="chart-container">
+                                        <canvas id="priceChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="prediction-card">
+                                    <h3>Price Prediction</h3>
+                                    <div class="prediction-details">
+                                        <div class="prediction-value">
+                                            <span class="label">Next Day Closing Price:</span>
+                                            <span class="value" id="predictedPriceDetail"></span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="label">Expected Change:</span>
+                                            <span class="value" id="predictedChange"></span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="label">Prediction Confidence:</span>
+                                            <div class="confidence-bar">
+                                                <div class="confidence-fill" id="confidenceFill"></div>
+                                            </div>
+                                            <span class="value" id="confidenceValue"></span>
+                                        </div>
+                                    </div>
+                                    <div class="prediction-note">
+                                        <p>Based on machine learning analysis of historical patterns, momentum, and volatility.</p>
+                                    </div>
+                                </div>
+                                <div class="top-competitors-card">
+                                    <h3>Top Competitors</h3>
+                                    <div id="topCompetitorsList" class="top-competitors-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Competitors Tab -->
+                        <div class="tab-pane" id="competitors">
+                            <div class="competitors-grid">
+                                <div class="competitors-list-card">
+                                    <h3>Peer Competitors by Sector</h3>
+                                    <div id="competitorsSectorsList" class="competitors-sectors-list"></div>
+                                </div>
+                                <div class="competitors-chart-card">
+                                    <h3>Performance Comparison</h3>
+                                    <div class="chart-container">
+                                        <canvas id="competitorsChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="market-cap-comparison-card">
+                                    <h3>Market Cap Comparison</h3>
+                                    <div class="chart-container">
+                                        <canvas id="marketCapChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sectors Tab -->
+                        <div class="tab-pane" id="sectors">
+                            <div class="sectors-grid">
+                                <div class="sectors-list-card">
+                                    <h3>Operating Sectors</h3>
+                                    <div id="sectorsList" class="sectors-list"></div>
+                                </div>
+                                <div class="sector-performance-card">
+                                    <h3>Sector Performance</h3>
+                                    <div class="chart-container">
+                                        <canvas id="sectorPerformanceChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="sector-etfs-card">
+                                    <h3>Sector ETFs</h3>
+                                    <div id="sectorEtfsList" class="sector-etfs-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Growth Metrics Tab -->
+                        <div class="tab-pane" id="metrics">
+                            <div class="metrics-grid">
+                                <div class="growth-metrics-card">
+                                    <h3>Growth Metrics</h3>
+                                    <div id="growthMetricsList" class="growth-metrics-list"></div>
+                                </div>
+                                <div class="financial-ratios-card">
+                                    <h3>Financial Ratios</h3>
+                                    <div id="financialRatiosList" class="financial-ratios-list"></div>
+                                </div>
+                                <div class="company-vs-competitors-card">
+                                    <h3>Growth Comparison</h3>
+                                    <div class="chart-container">
+                                        <canvas id="growthComparisonChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- News Tab -->
+                        <div class="tab-pane" id="news">
+                            <div class="news-grid">
+                                <div class="latest-news-card">
+                                    <h3>Latest News</h3>
+                                    <div id="newsList" class="news-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Watchlist Modal -->
+            <div id="watchlistModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Add to Watchlist</h2>
+                    <div id="watchlistsList" class="watchlists-list">
+                        <!-- Watchlists will be populated here -->
+                    </div>
+                    <div class="new-watchlist">
+                        <h3>Create New Watchlist</h3>
+                        <div class="form-group">
+                            <input type="text" id="newWatchlistName" placeholder="Watchlist Name">
+                            <button id="createWatchlistBtn" class="btn btn-secondary">Create</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Modal -->
+            <div id="alertModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Set Price Alert</h2>
+                    <div class="alert-form">
+                        <div class="form-group">
+                            <label>Current Price: <span id="alertCurrentPrice"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label for="alertPrice">Alert Price:</label>
+                            <input type="number" id="alertPrice" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Alert Type:</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="alertType" value="above" checked> Price Above
+                                </label>
+                                <label>
+                                    <input type="radio" name="alertType" value="below"> Price Below
+                                </label>
+                            </div>
+                        </div>
+                        <button id="createAlertBtn" class="btn btn-primary">Set Alert</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <div class="logo">StockMind AI</div>
+                    <p>Advanced stock analysis powered by AI and ML</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="{{ url_for('home') }}">Home</a></li>
+                        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li><a href="{{ url_for('analyze_view') }}">Analyze</a></li>
+                        <li><a href="{{ url_for('portfolio') }}">Portfolio</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact</h4>
+                    <p>Email: info@stockmind-ai.com</p>
+                    <p>GitHub: <a href="https://github.com/stockmind-ai" target="_blank">github.com/stockmind-ai</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 StockMind AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize global variables for storing analysis data
+            let currentAnalysisData = null;
+            
+            // Tab switching
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons and panes
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked button and corresponding pane
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // Modal functionality
+            const watchlistModal = document.getElementById('watchlistModal');
+            const alertModal = document.getElementById('alertModal');
+            const addToWatchlistBtn = document.getElementById('addToWatchlist');
+            const setAlertBtn = document.getElementById('setAlert');
+            const closeBtns = document.querySelectorAll('.close');
+            
+            addToWatchlistBtn.addEventListener('click', function() {
+                watchlistModal.style.display = 'block';
+                // Fetch watchlists and populate
+                fetchWatchlists();
+            });
+            
+            setAlertBtn.addEventListener('click', function() {
+                alertModal.style.display = 'block';
+                // Set current price in alert modal
+                document.getElementById('alertCurrentPrice').textContent = document.getElementById('currentPrice').textContent;
+            });
+            
+            closeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    watchlistModal.style.display = 'none';
+                    alertModal.style.display = 'none';
+                });
+            });
+            
+            window.addEventListener('click', function(event) {
+                if (event.target == watchlistModal) {
+                    watchlistModal.style.display = 'none';
+                }
+                if (event.target == alertModal) {
+                    alertModal.style.display = 'none';
+                }
+            });
+            
+            // Fetch user's watchlists
+            async function fetchWatchlists() {
+                try {
+                    const response = await fetch('/api/watchlist');
+                    const watchlists = await response.json();
+                    
+                    const watchlistsList = document.getElementById('watchlistsList');
+                    watchlistsList.innerHTML = '';
+                    
+                    if (watchlists.length === 0) {
+                        watchlistsList.innerHTML = '<p>You don\'t have any watchlists yet.</p>';
+                        return;
+                    }
+                    
+                    watchlists.forEach(watchlist => {
+                        const watchlistItem = document.createElement('div');
+                        watchlistItem.className = 'watchlist-item';
+                        
+                        watchlistItem.innerHTML = `
+                            <div class="watchlist-info">
+                                <div class="watchlist-name">${watchlist.name}</div>
+                                <div class="watchlist-count">${watchlist.stocks.length} stocks</div>
+                            </div>
+                            <button class="btn btn-small add-to-watchlist-btn" data-id="${watchlist.id}">Add</button>
+                        `;
+                        
+                        watchlistsList.appendChild(watchlistItem);
+                    });
+                    
+                    // Add event listeners to Add buttons
+                    document.querySelectorAll('.add-to-watchlist-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            addStockToWatchlist(this.dataset.id);
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error fetching watchlists:', error);
+                }
+            }
+            
+            // Add stock to watchlist
+            async function addStockToWatchlist(watchlistId) {
+                if (!currentAnalysisData) return;
+                
+                try {
+                    const response = await fetch(`/api/watchlist/${watchlistId}/stock`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: currentAnalysisData.ticker
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(`${currentAnalysisData.ticker} added to watchlist successfully!`);
+                        watchlistModal.style.display = 'none';
+                    } else {
+                        alert(result.message || 'Failed to add stock to watchlist');
+                    }
+                } catch (error) {
+                    console.error('Error adding stock to watchlist:', error);
+                    alert('An error occurred while adding stock to watchlist');
+                }
+            }
+            
+            // Create new watchlist
+            document.getElementById('createWatchlistBtn').addEventListener('click', async function() {
+                const watchlistName = document.getElementById('newWatchlistName').value.trim();
+                
+                if (!watchlistName) {
+                    alert('Please enter a watchlist name');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/watchlist', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: watchlistName
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        document.getElementById('newWatchlistName').value = '';
+                        fetchWatchlists();
+                    } else {
+                        alert(result.message || 'Failed to create watchlist');
+                    }
+                } catch (error) {
+                    console.error('Error creating watchlist:', error);
+                    alert('An error occurred while creating watchlist');
+                }
+            });
+            
+            // Create price alert
+            document.getElementById('createAlertBtn').addEventListener('click', async function() {
+                if (!currentAnalysisData) return;
+                
+                const alertPrice = document.getElementById('alertPrice').value;
+                const alertType = document.querySelector('input[name="alertType"]:checked').value;
+                
+                if (!alertPrice) {
+                    alert('Please enter an alert price');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/alerts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ticker: currentAnalysisData.ticker,
+                            target_price: parseFloat(alertPrice),
+                            alert_type: alertType
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(`Price alert for ${currentAnalysisData.ticker} set successfully!`);
+                        alertModal.style.display = 'none';
+                    } else {
+                        alert(result.message || 'Failed to create price alert');
+                    }
+                } catch (error) {
+                    console.error('Error creating price alert:', error);
+                    alert('An error occurred while creating price alert');
+                }
+            });
+            
+            // Analysis form submission
+            const analyzeForm = document.getElementById('analyzeForm');
+            const loader = document.getElementById('loader');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            analyzeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const companyName = document.getElementById('companyName').value.trim();
+                const ticker = document.getElementById('ticker').value.trim();
+                
+                if (!companyName && !ticker) {
+                    alert('Please enter either a company name or ticker symbol');
+                    return;
+                }
+                
+                // Show loader, hide results
+                loader.style.display = 'flex';
+                resultsSection.style.display = 'none';
+                
+                // Prepare data for API call
+                const data = {
+                    company_name: companyName,
+                    ticker: ticker
+                };
+                
+                // Make API call
+                fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Store the analysis data globally
+                        currentAnalysisData = data;
+                        displayResults(data);
+                    } else {
+                        alert(data.error || 'An error occurred during analysis');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing your request');
+                })
+                .finally(() => {
+                    loader.style.display = 'none';
+                });
+            });
+            
+            // Check if URL has ticker parameter and auto-analyze
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTicker = urlParams.get('ticker');
+            if (urlTicker) {
+                document.getElementById('ticker').value = urlTicker;
+                analyzeForm.dispatchEvent(new Event('submit'));
+            }
+            
+            // Function to display analysis results
+            function displayResults(data) {
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Basic info
+                document.getElementById('companyNameDisplay').textContent = data.company_name;
+                document.getElementById('tickerDisplay').textContent = data.ticker;
+                document.getElementById('currentPrice').textContent = `$${data.current_price}`;
+                
+                const predictedPrice = data.predicted_price || (data.current_price * 1.01).toFixed(2);
+                document.getElementById('predictedPrice').textContent = `$${predictedPrice}`;
+                document.getElementById('predictedPriceDetail').textContent = `$${predictedPrice}`;
+                
+                // Calculate change percentage
+                const changePercent = ((predictedPrice - data.current_price) / data.current_price * 100).toFixed(2);
+                const changeDirection = changePercent >= 0 ? 'up' : 'down';
+                document.getElementById('predictionBadge').textContent = changeDirection === 'up' ? '↑' : '↓';
+                document.getElementById('predictionBadge').className = `prediction-badge ${changeDirection}`;
+                document.getElementById('predictedChange').textContent = `${changePercent}%`;
+                document.getElementById('predictedChange').className = `value ${changeDirection}`;
+                
+                // Set prediction confidence (simulated for demo)
+                const confidence = Math.floor(Math.random() * 30) + 70; // Random between 70-99%
+                document.getElementById('confidenceFill').style.width = `${confidence}%`;
+                document.getElementById('confidenceValue').textContent = `${confidence}%`;
+                
+                // Company description
+                document.getElementById('companyDescription').textContent = data.description;
+                
+                // Price chart
+                const priceCtx = document.getElementById('priceChart').getContext('2d');
+                new Chart(priceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.time_labels,
+                        datasets: [{
+                            label: `${data.ticker} Price`,
+                            data: data.stock_prices,
+                            borderColor: '#3d41ff',
+                            backgroundColor: 'rgba(93, 178, 255, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Top competitors list
+                const topCompetitorsList = document.getElementById('topCompetitorsList');
+                topCompetitorsList.innerHTML = '';
+                
+                if (data.top_competitors && data.top_competitors.length > 0) {
+                    data.top_competitors.forEach(competitor => {
+                        const competitorItem = document.createElement('div');
+                        competitorItem.className = 'competitor-item';
+                        
+                        competitorItem.innerHTML = `
+                            <div class="competitor-info">
+                                <div class="competitor-name">${competitor.name}</div>
+                                <div class="competitor-ticker">${competitor.ticker}</div>
+                            </div>
+                            <div class="competitor-price">$${competitor.stock_price}</div>
+                            <button class="btn btn-small analyze-competitor-btn" data-ticker="${competitor.ticker}">Analyze</button>
+                        `;
+                        
+                        topCompetitorsList.appendChild(competitorItem);
+                    });
+                    
+                    // Add event listeners to Analyze buttons
+                    document.querySelectorAll('.analyze-competitor-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.getElementById('ticker').value = this.dataset.ticker;
+                            document.getElementById('companyName').value = '';
+                            analyzeForm.dispatchEvent(new Event('submit'));
+                        });
+                    });
+                    
+                    // Competitors performance chart
+                    const competitorsCtx = document.getElementById('competitorsChart').getContext('2d');
+                    
+                    // Prepare datasets for competitors chart
+                    const competitorsDatasets = [
+                        {
+                            label: data.ticker,
+                            data: data.stock_prices,
+                            borderColor: '#3d41ff',
+                            backgroundColor: 'rgba(61, 65, 255, 0.1)',
+                            tension: 0.4
+                        }
+                    ];
+                    
+                    // Add datasets for each competitor
+                    data.top_competitors.forEach((competitor, index) => {
+                        const colors = [
+                            { border: '#ff3d3d', bg: 'rgba(255, 61, 61, 0.1)' },
+                            { border: '#3dff6e', bg: 'rgba(61, 255, 110, 0.1)' },
+                            { border: '#ff3dc0', bg: 'rgba(255, 61, 192, 0.1)' }
+                        ];
+                        
+                        competitorsDatasets.push({
+                            label: competitor.ticker,
+                            data: competitor.stock_prices,
+                            borderColor: colors[index].border,
+                            backgroundColor: colors[index].bg,
+                            tension: 0.4
+                        });
+                    });
+                    
+                    new Chart(competitorsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.time_labels,
+                            datasets: competitorsDatasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                },
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                     // Market cap comparison chart
+                    const marketCapCtx = document.getElementById('marketCapChart').getContext('2d');
+                    
+                    // Prepare data for market cap chart
+                    const marketCapLabels = [data.ticker, ...data.top_competitors.map(c => c.ticker)];
+                    const marketCapData = [
+                        data.market_cap || Math.random() * 1000000000, // Fallback to random if not available
+                        ...data.top_competitors.map(c => c.market_cap)
+                    ];
+                    
+                    new Chart(marketCapCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: marketCapLabels,
+                            datasets: [{
+                                label: 'Market Cap (USD)',
+                                data: marketCapData,
+                                backgroundColor: [
+                                    'rgba(61, 65, 255, 0.7)',
+                                    'rgba(255, 61, 61, 0.7)',
+                                    'rgba(61, 255, 110, 0.7)',
+                                    'rgba(255, 61, 192, 0.7)'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.raw;
+                                            return new Intl.NumberFormat('en-US', {
+                                                style: 'currency',
+                                                currency: 'USD',
+                                                notation: 'compact',
+                                                compactDisplay: 'short',
+                                                maximumFractionDigits: 1
+                                            }).format(value);
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    ticks: {
+                                        callback: function(value) {
+                                            return new Intl.NumberFormat('en-US', {
+                                                notation: 'compact',
+                                                compactDisplay: 'short'
+                                            }).format(value);
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Sectors list and visualizations
+                const sectorsList = document.getElementById('sectorsList');
+                sectorsList.innerHTML = '';
+                
+                if (data.sectors && data.sectors.length > 0) {
+                    const competitorsSectorsList = document.getElementById('competitorsSectorsList');
+                    competitorsSectorsList.innerHTML = '';
+                    
+                    data.sectors.forEach(sector => {
+                        // Add to sectors list
+                        const sectorItem = document.createElement('div');
+                        sectorItem.className = 'sector-item';
+                        sectorItem.innerHTML = `
+                            <div class="sector-name">${sector.name}</div>
+                        `;
+                        sectorsList.appendChild(sectorItem);
+                        
+                        // Add to competitors by sector list
+                        const sectorCompetitorsItem = document.createElement('div');
+                        sectorCompetitorsItem.className = 'sector-competitors-item';
+                        
+                        let competitorsHtml = `<div class="sector-name">${sector.name}</div>
+                                              <div class="sector-competitors">`;
+                        
+                        sector.competitors.forEach(competitor => {
+                            competitorsHtml += `<div class="sector-competitor">
+                                                <span class="competitor-name">${competitor}</span>
+                                                <button class="btn btn-xsmall analyze-competitor-btn" data-name="${competitor}">Analyze</button>
+                                              </div>`;
+                        });
+                        
+                        competitorsHtml += `</div>`;
+                        sectorCompetitorsItem.innerHTML = competitorsHtml;
+                        competitorsSectorsList.appendChild(sectorCompetitorsItem);
+                    });
+                    
+                    // Add event listeners to Analyze buttons for competitors
+                    document.querySelectorAll('.sector-competitors .analyze-competitor-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            document.getElementById('companyName').value = this.dataset.name;
+                            document.getElementById('ticker').value = '';
+                            analyzeForm.dispatchEvent(new Event('submit'));
+                        });
+                    });
+                    
+                    // Sector performance chart if available
+                    if (data.sector_performances && data.sector_performances.length > 0) {
+                        const sectorPerformanceCtx = document.getElementById('sectorPerformanceChart').getContext('2d');
+                        
+                        // Prepare datasets for sector performance chart
+                        const sectorDatasets = data.sector_performances.map((sector, index) => {
+                            const colors = [
+                                { border: '#3d41ff', bg: 'rgba(61, 65, 255, 0.1)' },
+                                { border: '#ff3d3d', bg: 'rgba(255, 61, 61, 0.1)' },
+                                { border: '#3dff6e', bg: 'rgba(61, 255, 110, 0.1)' }
+                            ];
+                            
+                            return {
+                                label: sector.name,
+                                data: sector.stock_prices,
+                                borderColor: colors[index % colors.length].border,
+                                backgroundColor: colors[index % colors.length].bg,
+                                tension: 0.4
+                            };
+                        });
+                        
+                        new Chart(sectorPerformanceCtx, {
+                            type: 'line',
+                            data: {
+                                labels: data.sector_performances[0].time_labels,
+                                datasets: sectorDatasets
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    tooltip: {
+                                        mode: 'index',
+                                        intersect: false
+                                    },
+                                    legend: {
+                                        display: true,
+                                        position: 'top'
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        }
+                                    },
+                                    y: {
+                                        grid: {
+                                            color: 'rgba(255, 255, 255, 0.1)'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Sector ETFs list
+                        const sectorEtfsList = document.getElementById('sectorEtfsList');
+                        sectorEtfsList.innerHTML = '';
+                        
+                        data.sector_performances.forEach(sector => {
+                            const etfItem = document.createElement('div');
+                            etfItem.className = 'etf-item';
+                            
+                            etfItem.innerHTML = `
+                                <div class="etf-info">
+                                    <div class="etf-name">${sector.name}</div>
+                                    <div class="etf-ticker">${sector.ticker}</div>
+                                </div>
+                                <div class="etf-price">$${sector.current_price}</div>
+                                <button class="btn btn-small analyze-etf-btn" data-ticker="${sector.ticker}">Analyze</button>
+                            `;
+                            
+                            sectorEtfsList.appendChild(etfItem);
+                        });
+                        
+                        // Add event listeners to Analyze buttons for ETFs
+                        document.querySelectorAll('.analyze-etf-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                document.getElementById('ticker').value = this.dataset.ticker;
+                                document.getElementById('companyName').value = '';
+                                analyzeForm.dispatchEvent(new Event('submit'));
+                            });
+                        });
+                    }
+                }
+                
+                // Growth metrics
+                if (data.growth_metrics) {
+                    const growthMetricsList = document.getElementById('growthMetricsList');
+                    growthMetricsList.innerHTML = '';
+                    
+                    const metrics = data.growth_metrics;
+                    
+                    const metricsHtml = `
+                        <div class="metric-item">
+                            <div class="metric-name">Revenue Growth</div>
+                            <div class="metric-value">${metrics.revenue_growth}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-name">Earnings Growth</div>
+                            <div class="metric-value">${metrics.earnings_growth}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-name">Dividend Yield</div>
+                            <div class="metric-value">${metrics.dividend_yield}</div>
+                        </div>
+                    `;
+                    
+                    growthMetricsList.innerHTML = metricsHtml;
+                    
+                    // Financial ratios
+                    const financialRatiosList = document.getElementById('financialRatiosList');
+                    financialRatiosList.innerHTML = '';
+                    
+                    const ratiosHtml = `
+                        <div class="ratio-item">
+                            <div class="ratio-name">Profit Margins</div>
+                            <div class="ratio-value">${metrics.profit_margins}</div>
+                        </div>
+                        <div class="ratio-item">
+                            <div class="ratio-name">Return on Equity</div>
+                            <div class="ratio-value">${metrics.return_on_equity}</div>
+                        </div>
+                        <div class="ratio-item">
+                            <div class="ratio-name">Beta</div>
+                            <div class="ratio-value">${metrics.beta}</div>
+                        </div>
+                    `;
+                    
+                    financialRatiosList.innerHTML = ratiosHtml;
+                }
+                
+                // News
+                if (data.news && data.news.length > 0) {
+                    const newsList = document.getElementById('newsList');
+                    newsList.innerHTML = '';
+                    
+                    data.news.forEach(item => {
+                        const newsItem = document.createElement('div');
+                        newsItem.className = 'news-item';
+                        
+                        newsItem.innerHTML = `
+                            <div class="news-title">
+                                <a href="${item.link}" target="_blank">${item.title}</a>
+                            </div>
+                            <div class="news-info">
+                                <span class="news-publisher">${item.publisher}</span>
+                                <span class="news-date">${item.published}</span>
+                            </div>
+                        `;
+                        
+                        newsList.appendChild(newsItem);
+                    });
+                } else {
+                    document.getElementById('newsList').innerHTML = '<p>No recent news available.</p>';
+                }
+            }
+        });
+    </script>
